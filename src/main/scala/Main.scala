@@ -25,10 +25,6 @@ class SokovnyaBot(token: String) extends AkkaExampleBot(token)
   with Polling
   with Commands[Future] {
 
-  onCommand("/start") { implicit msg =>
-    reply("Make texting great again!\nUse /covfefe to get a Trump quote.").void
-  }
-
   onMessage { implicit msg =>
     using(_.newChatMembers) { newChatMembers =>
       for (user <- newChatMembers) {
