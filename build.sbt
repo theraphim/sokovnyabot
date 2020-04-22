@@ -1,4 +1,4 @@
-name := "bototest"
+name := "sokovnyabot"
 
 version := "0.1"
 
