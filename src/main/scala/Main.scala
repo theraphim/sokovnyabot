@@ -3,6 +3,7 @@ import cats.syntax.functor._
 import com.softwaremill.sttp._
 import com.bot4s.telegram.future.Polling
 import com.bot4s.telegram.api.declarative.Commands
+import com.bot4s.telegram.methods.ParseMode
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
@@ -29,7 +30,11 @@ class SokovnyaBot(token: String) extends AkkaExampleBot(token)
     using(_.newChatMembers) { newChatMembers =>
       for (user <- newChatMembers) {
         val suffix = user.lastName.map(x => s" $x").getOrElse("")
-        reply(s"Здравствуйте ${user.firstName}${suffix}, при входе надо представиться и рассказать о себе. Соковня")
+        reply(
+          s"Здравствуйте [${user.firstName}${suffix}](tg://user?id=${user.id}), при входе надо представиться и рассказать о себе. Соковня",
+          parseMode = Some(ParseMode.Markdown),
+          replyToMessageId = Some(msg.messageId),
+        )
       }
       Future.unit
     }

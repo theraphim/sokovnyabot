@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/bototest.iml" filepath="$PROJECT_DIR$/.idea/modules/bototest.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/bototest-build.iml" filepath="$PROJECT_DIR$/.idea/modules/bototest-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/sokovnyabot.iml" filepath="$PROJECT_DIR$/.idea/modules/sokovnyabot.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/sokovnyabot-build.iml" filepath="$PROJECT_DIR$/.idea/modules/sokovnyabot-build.iml" />
     </modules>
   </component>
 </project>
