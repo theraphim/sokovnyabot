@@ -22,6 +22,16 @@ abstract class AkkaExampleBot(val token: String) extends AkkaTelegramBot {
   override val client = new AkkaHttpClient(token)
 }
 
+object NameTables {
+  val alesyaEng = Seq("lesya", "lesja", "lesia", "lesa", "lyesya", "lyesja", "lyesia", "lyesa", "ljesya", "ljesja", "ljesia", "ljesa").flatMap { s =>
+    Seq(s"a$s", s"o$s")
+  }
+
+  val alesyaRu = Seq("олеся", "алеся")
+
+  val alesya: Set[String] = (alesyaEng ++ alesyaRu).toSet
+}
+
 class SokovnyaBot(token: String) extends AkkaExampleBot(token)
   with Polling
   with Commands[Future] {
@@ -30,8 +40,13 @@ class SokovnyaBot(token: String) extends AkkaExampleBot(token)
     using(_.newChatMembers) { newChatMembers =>
       for (user <- newChatMembers) {
         val suffix = user.lastName.map(x => s" $x").getOrElse("")
+        val replyText = if (NameTables.alesya.contains(user.firstName.toLowerCase)) {
+          s"Здравствуйте [${user.firstName}${suffix}](tg://user?id=${user.id}), теперь Вы здеся! При входе надо представиться и рассказать о себе. Соковня"
+        } else {
+          s"Здравствуйте [${user.firstName}${suffix}](tg://user?id=${user.id}), при входе надо представиться и рассказать о себе. Соковня"
+        }
         reply(
-          s"Здравствуйте [${user.firstName}${suffix}](tg://user?id=${user.id}), при входе надо представиться и рассказать о себе. Соковня",
+          replyText,
           parseMode = Some(ParseMode.Markdown),
           replyToMessageId = Some(msg.messageId),
         )
