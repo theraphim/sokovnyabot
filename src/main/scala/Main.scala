@@ -27,7 +27,7 @@ object NameTables {
     Seq(s"a$s", s"o$s")
   }
 
-  val alesyaRu = Seq("олеся", "алеся")
+  val alesyaRu = Seq("олеся", "алеся", "леся")
 
   val alesya: Set[String] = (alesyaEng ++ alesyaRu).toSet
 }
