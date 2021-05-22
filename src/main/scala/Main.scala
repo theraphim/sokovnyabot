@@ -4,6 +4,7 @@ import com.softwaremill.sttp._
 import com.bot4s.telegram.future.Polling
 import com.bot4s.telegram.api.declarative.Commands
 import com.bot4s.telegram.methods.ParseMode
+import com.bot4s.telegram.models.{Message, User}
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
@@ -15,10 +16,6 @@ import com.bot4s.telegram.clients.AkkaHttpClient
 import slogging.{LogLevel, LoggerConfig, PrintLoggerFactory}
 
 abstract class AkkaExampleBot(val token: String) extends AkkaTelegramBot {
-  LoggerConfig.factory = PrintLoggerFactory()
-  // set log level, e.g. to TRACE
-  LoggerConfig.level = LogLevel.TRACE
-
   override val client = new AkkaHttpClient(token)
 }
 
@@ -36,24 +33,39 @@ class SokovnyaBot(token: String) extends AkkaExampleBot(token)
   with Polling
   with Commands[Future] {
 
+  LoggerConfig.factory = PrintLoggerFactory()
+  // set log level, e.g. to TRACE
+  LoggerConfig.level = LogLevel.TRACE
+
+  private[this] def greetUser(user: User)(implicit msg: Message) = {
+    val suffix = user.lastName.map(x => s" $x").getOrElse("")
+    val replyText = if (NameTables.alesya.contains(user.firstName.toLowerCase)) {
+      s"Здравствуйте [${user.firstName}${suffix}](tg://user?id=${user.id}), теперь Вы здеся! При входе надо надеть маску, представиться, рассказать о себе, не отходить от чята дальше чем на 20км. Соковня"
+    } else {
+      s"Здравствуйте [${user.firstName}${suffix}](tg://user?id=${user.id}), при входе надо надеть маску, представиться, рассказать о себе, не отходить от чята дальше чем на 20км. Соковня"
+    }
+    reply(
+      replyText,
+      parseMode = Some(ParseMode.Markdown),
+      replyToMessageId = Some(msg.messageId),
+    )
+  }
+
+  onCommand("preved") { implicit msg =>
+    using(_.from) { user =>
+      greetUser(user).map(_ => ())
+    }
+  }
+
   onMessage { implicit msg =>
     using(_.newChatMembers) { newChatMembers =>
       for (user <- newChatMembers) {
-        val suffix = user.lastName.map(x => s" $x").getOrElse("")
-        val replyText = if (NameTables.alesya.contains(user.firstName.toLowerCase)) {
-          s"Здравствуйте [${user.firstName}${suffix}](tg://user?id=${user.id}), теперь Вы здеся! При входе надо представиться и рассказать о себе. Соковня"
-        } else {
-          s"Здравствуйте [${user.firstName}${suffix}](tg://user?id=${user.id}), при входе надо представиться и рассказать о себе. Соковня"
-        }
-        reply(
-          replyText,
-          parseMode = Some(ParseMode.Markdown),
-          replyToMessageId = Some(msg.messageId),
-        )
+        greetUser(user)
       }
       Future.unit
     }
   }
+
 }
 
 case class ServiceConfig(token: String)

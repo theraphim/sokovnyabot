@@ -1,8 +1,10 @@
 name := "sokovnyabot"
 
-version := "0.1"
+version := "0.3"
 
-scalaVersion := "2.12.11"
+maintainer := "i@stingr.net"
+
+scalaVersion := "2.13.6"
 
 enablePlugins(JavaAppPackaging)
 
@@ -19,10 +21,20 @@ scalacOptions ++= Seq(
   "-opt-inline-from:<sources>"
 )
 
-val bot4s = "4.4.0-RC2"
+updateOptions := updateOptions.value.withCachedResolution(true)
+
+resolvers ++= Seq(
+  Resolver.mavenLocal,
+  Resolver.jcenterRepo,
+  Resolver.sonatypeRepo("snapshots"),
+  Resolver.typesafeRepo("releases")
+)
+
+val bot4s = "5.0.0-SNAPSHOT"
 
 libraryDependencies ++= Seq(
   "com.bot4s" %% "telegram-core" % bot4s,
   "com.bot4s" %% "telegram-akka" % bot4s,
-  "com.github.pureconfig" %% "pureconfig" % "0.12.3"
+  "biz.enef" %% "slogging" % "0.6.2",
+  "com.github.pureconfig" %% "pureconfig" % "0.15.0"
 )
