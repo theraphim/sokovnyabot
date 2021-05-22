@@ -4,6 +4,7 @@ import com.softwaremill.sttp._
 import com.bot4s.telegram.future.Polling
 import com.bot4s.telegram.api.declarative.Commands
 import com.bot4s.telegram.methods.ParseMode
+import com.bot4s.telegram.models.ChatType.Supergroup
 import com.bot4s.telegram.models.{Message, User}
 
 import scala.concurrent.duration.Duration
@@ -29,7 +30,7 @@ object NameTables {
   val alesya: Set[String] = (alesyaEng ++ alesyaRu).toSet
 }
 
-class SokovnyaBot(token: String) extends AkkaExampleBot(token)
+class SokovnyaBot(token: String, russianChats: Set[Long]) extends AkkaExampleBot(token)
   with Polling
   with Commands[Future] {
 
@@ -37,12 +38,17 @@ class SokovnyaBot(token: String) extends AkkaExampleBot(token)
   // set log level, e.g. to TRACE
   LoggerConfig.level = LogLevel.TRACE
 
-  private[this] def greetUser(user: User)(implicit msg: Message) = {
+  private[this] def greetUser(user: User, isRussian: Boolean)(implicit msg: Message) = {
     val suffix = user.lastName.map(x => s" $x").getOrElse("")
-    val replyText = if (NameTables.alesya.contains(user.firstName.toLowerCase)) {
-      s"Здравствуйте [${user.firstName}${suffix}](tg://user?id=${user.id}), теперь Вы здеся! При входе надо надеть маску, представиться, рассказать о себе, не отходить от чята дальше чем на 20км. Соковня"
+    val userMD = s"[${user.firstName}${suffix}](tg://user?id=${user.id})"
+    val replyText = if (isRussian) {
+      if (NameTables.alesya.contains(user.firstName.toLowerCase)) {
+        s"Здравствуйте $userMD, теперь Вы здеся! При входе надо надеть маску, представиться, рассказать о себе, не отходить от чята дальше чем на 20км. Соковня"
+      } else {
+        s"Здравствуйте $userMD, при входе надо надеть маску, представиться, рассказать о себе, не отходить от чята дальше чем на 20км. Соковня"
+      }
     } else {
-      s"Здравствуйте [${user.firstName}${suffix}](tg://user?id=${user.id}), при входе надо надеть маску, представиться, рассказать о себе, не отходить от чята дальше чем на 20км. Соковня"
+      s"Greetings $userMD, please state your name, age, and occupation."
     }
     reply(
       replyText,
@@ -53,29 +59,30 @@ class SokovnyaBot(token: String) extends AkkaExampleBot(token)
 
   onCommand("preved") { implicit msg =>
     using(_.from) { user =>
-      greetUser(user).map(_ => ())
+      greetUser(user, false).map(_ => ())
     }
   }
 
   onMessage { implicit msg =>
+    val isCyrillic = (msg.chat.`type` == Supergroup) && russianChats.contains(msg.chat.id)
+    if (!isCyrillic) {
+      logger.info(s"non-russian chat: ${msg.chat}, text: ${msg.text}")
+    }
     using(_.newChatMembers) { newChatMembers =>
-      for (user <- newChatMembers) {
-        greetUser(user)
-      }
-      Future.unit
+      Future.sequence(newChatMembers.map(user => greetUser(user, isCyrillic)).toSeq).map(_ => ())
     }
   }
 
 }
 
-case class ServiceConfig(token: String)
+case class ServiceConfig(token: String, russianChats: List[Long])
 
 import pureconfig._
 import pureconfig.generic.auto._
 
 object SokovnyaMain extends App {
   ConfigSource.default.load[ServiceConfig].foreach { config =>
-    val bot = new SokovnyaBot(config.token)
+    val bot = new SokovnyaBot(config.token, config.russianChats.toSet)
     val eol = bot.run()
     println("Press [ENTER] to shutdown the bot, it may take a few seconds...")
     scala.io.StdIn.readLine()
