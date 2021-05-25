@@ -81,7 +81,11 @@ import pureconfig._
 import pureconfig.generic.auto._
 
 object SokovnyaMain extends App {
-  ConfigSource.default.load[ServiceConfig].foreach { config =>
+  val conf = ConfigSource.default.load[ServiceConfig]
+  conf match {
+    case Left(value) =>
+      println(value)
+    case Right(config) =>
     val bot = new SokovnyaBot(config.token, config.russianChats.toSet)
     val eol = bot.run()
     println("Press [ENTER] to shutdown the bot, it may take a few seconds...")
